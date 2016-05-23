@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 
 // Protocols
 
@@ -19,6 +20,7 @@ protocol VendingMachineType {
     
     func vend(selection: VendingSelection, quantity: Double) throws
     func deposit(amount: Double)
+    func itemForCurrentSelection(selection: VendingSelection) -> ItemType?
 }
 
 protocol ItemType {
@@ -32,6 +34,12 @@ enum InventoryError: ErrorType {
     case InvalidResource
     case ConversionError
     case InvalidKey
+}
+
+enum VendingMachineError:ErrorType {
+    case InvalidSelection
+    case OutOfStock
+    case InsufficientFunds(required: Double)
 }
 
 // Helper Classes
@@ -87,6 +95,14 @@ enum VendingSelection: String {
     case FruitJuice
     case SportsDrink
     case Gum
+    
+    func icon() -> UIImage {
+        if let image = UIImage(named: self.rawValue){
+            return image
+        } else {
+            return UIImage(named: "Default")!
+        }
+    }
 }
 
 struct VendingItem: ItemType {
@@ -103,8 +119,29 @@ class VendingMachine: VendingMachineType {
         self.inventory = inventory
     }
     func vend(selection: VendingSelection, quantity: Double) throws {
-        // add code
+        guard var item = inventory[selection] else {
+            throw VendingMachineError.InvalidSelection
+        }
+        guard item.quantity > 0  else {
+            throw VendingMachineError.OutOfStock
+        }
+        item.quantity -= quantity
+        inventory.updateValue(item, forKey: selection)
+        
+        let totalPrice = item.price * quantity
+        if amountDeposited >= totalPrice {
+            amountDeposited -= totalPrice
+        } else {
+            let amountRequired = totalPrice - amountDeposited
+            throw VendingMachineError.InsufficientFunds(required: amountRequired)
+        }
+        
     }
+    func itemForCurrentSelection(selection: VendingSelection) -> ItemType? {
+        return inventory[selection]
+    }
+    
+    
     func deposit(amount: Double) {
         //add code
     }
