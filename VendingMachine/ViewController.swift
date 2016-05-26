@@ -109,8 +109,14 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
             do {
                 try vendingMachine.vend(currentSelection, quantity: quantity)
                 updateBalanceLabel()
-            } catch {
-                // FIXME: ERror handling code
+            } catch VendingMachineError.OutOfStock{
+                showAlert("Out of Stock")
+            } catch VendingMachineError.InvalidSelection{
+                showAlert("Invalid Selection")
+            } catch VendingMachineError.InsufficientFunds(let amount) {
+                showAlert("Insufficent Funds", message: "Additional $\(amount) needed to complete transaction")
+            } catch let error {
+                fatalError("\(error)")
             }
         } else {
             // FIXME: Alert user to no selection
@@ -141,6 +147,28 @@ class ViewController: UIViewController, UICollectionViewDataSource, UICollection
         quantity = 1
         updateTotalPriceLabel()
         updateQuantityLabel()
+    }
+    
+    func showAlert(title: String, message: String? = nil, style: UIAlertControllerStyle = .Alert){
+        
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: style)
+        
+        let okAction = UIAlertAction(title: "OK", style: .Default, handler: dismissAlert)
+        
+        alertController.addAction(okAction)
+        
+        presentViewController(alertController, animated: true, completion: nil)
+        
+    }
+    func dismissAlert(sender: UIAlertAction) {
+        reset()
+    }
+    
+    
+    @IBAction func depositFunds() {
+        vendingMachine.deposit(5.00)
+        updateBalanceLabel()
+        
     }
     
 }
